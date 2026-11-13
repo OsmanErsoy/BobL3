@@ -41,18 +41,28 @@ export const Flights = () => {
     setFilteredFlights(filtered);
   }, [searchTerm, flights]);
 
-  const loadFlights = async () => {
+  const loadFlights = async (retries = 3, delay = 1000) => {
     setIsLoading(true);
-    try {
-      const data = await getFlights();
-      setFlights(data);
-      setFilteredFlights(data);
-    } catch (error: any) {
-      toast.error('Failed to load flights');
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const data = await getFlights();
+        setFlights(data);
+        setFilteredFlights(data);
+        return;
+      } catch (error: any) {
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, delay * attempt));
+        } else {
+          toast.error('Failed to load flights after multiple attempts');
+          console.error(error);
+        }
+      } finally {
+        if (attempt === retries) {
+          setIsLoading(false);
+        }
+      }
     }
+    setIsLoading(false);
   };
 
   const handleBookFlight = (flight: Flight) => {
