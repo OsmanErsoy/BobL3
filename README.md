@@ -9,18 +9,18 @@ A complete full-stack application for booking interplanetary space travel, featu
 - **Seat Classes** - Book Economy, Business or Galaxium seats with per-class pricing and availability
 - **Dual Protocol Backend** - REST API and MCP (Model Context Protocol) support
 - **Type-Safe** - Full TypeScript frontend and Python type hints
-- **Real-Time Updates** - Live flight availability and booking status
-- **User Management** - Simple name/email authentication
-- **Production Ready** - Optimized builds and comprehensive error handling
+- **User Management** - Simple name/email registration (no passwords)
 
 ## 🏗️ Architecture
 
 ```
-galaxium-travels-infrastructure/
+galaxium-travels/
 ├── booking_system_backend/     # FastAPI backend (Python)
 │   ├── server.py              # Main server with REST & MCP
 │   ├── services/              # Business logic layer
 │   ├── models.py              # SQLAlchemy ORM models
+│   ├── seat_classes.py        # Seat class definitions & price multipliers
+│   ├── seed.py                # Demo data (runs on every startup)
 │   └── tests/                 # Test suite
 │
 ├── booking_system_frontend/    # React frontend (TypeScript)
@@ -31,37 +31,30 @@ galaxium-travels-infrastructure/
 │   │   └── types/            # TypeScript definitions
 │   └── dist/                 # Production build
 │
-├── start.sh                   # Unix/Mac startup script
-└── start.bat                  # Windows startup script
+└── start.sh                   # macOS/Linux startup script
 ```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Python 3.8+** - [Download](https://www.python.org/downloads/)
-- **Node.js 18+** - [Download](https://nodejs.org/)
+- **Python 3.10+** - [Download](https://www.python.org/downloads/)
+- **Node.js 20+** - [Download](https://nodejs.org/)
 - **npm** (comes with Node.js)
 
-### Option 1: One-Command Start (Recommended)
+### Option 1: One-Command Start (macOS/Linux)
 
-#### On macOS/Linux:
 ```bash
 ./start.sh
 ```
 
-#### On Windows:
-```bash
-start.bat
-```
+This will:
+- Create the Python virtualenv and install dependencies (if missing)
+- Install frontend dependencies (if `node_modules` is missing)
+- Start the backend on port 8080 and the frontend dev server on port 5173
+- Stop both on `Ctrl+C`
 
-This will automatically:
-- ✅ Install all dependencies
-- ✅ Start the backend server on port 8080
-- ✅ Start the frontend dev server on port 5173
-- ✅ Open both in separate terminal windows
-
-### Option 2: Manual Start
+### Option 2: Manual Start (all platforms, including Windows)
 
 #### Start Backend:
 ```bash
@@ -76,6 +69,7 @@ python server.py
 ```bash
 cd booking_system_frontend
 npm install
+cp .env.example .env  # sets VITE_API_URL=http://localhost:8080
 npm run dev
 ```
 
@@ -127,6 +121,8 @@ Each flight has separate seat inventory per class. `Flight.price` is the base (E
 
 ### Demo Data
 
+> ⚠️ The database is wiped and re-seeded on **every backend startup**. Data does not persist across restarts.
+
 The system comes pre-seeded with:
 - **10 Users** - Alice, Bob, Charlie, Diana, Eve, Frank, Grace, Heidi, Ivan, Judy
 - **10 Flights** - Routes between Earth, Mars, Moon, Venus, Jupiter, Europa, Pluto, each with 10 seats split 6 Economy / 3 Business / 1 Galaxium
@@ -143,7 +139,7 @@ The system comes pre-seeded with:
 - **Uvicorn** - ASGI server
 
 ### Frontend
-- **React 18** - UI library
+- **React 19** - UI library
 - **TypeScript** - Type safety
 - **Vite** - Build tool
 - **Tailwind CSS** - Styling
@@ -154,16 +150,17 @@ The system comes pre-seeded with:
 
 ## 🧪 Testing
 
-### Backend Tests
+Backend tests must run from `booking_system_backend/` (they use an in-memory database):
 ```bash
 cd booking_system_backend
-pytest
+python -m pytest
 ```
 
-### Frontend Build Test
+The frontend has no tests; `npm run build` is the type-check, and `npm run lint` runs ESLint:
 ```bash
 cd booking_system_frontend
 npm run build
+npm run lint
 ```
 
 ## 📦 Production Deployment
@@ -172,8 +169,9 @@ npm run build
 ```bash
 cd booking_system_backend
 pip install -r requirements.txt
-uvicorn server:app --host 0.0.0.0 --port 8080
+python server.py   # binds to 127.0.0.1:8080
 ```
+Expose it through a TLS-terminating reverse proxy rather than binding to all interfaces. Note that CORS currently allows all origins; restrict it before production use.
 
 ### Frontend
 ```bash
@@ -181,9 +179,10 @@ cd booking_system_frontend
 npm run build
 # Deploy the 'dist' folder to your hosting service
 ```
+Set `VITE_API_URL` at build time to the public API URL.
 
-### Docker Support
-Both backend and frontend include Dockerfiles for containerized deployment.
+### Docker
+Only the backend includes a Dockerfile (`booking_system_backend/Dockerfile`).
 
 ## 🎨 Customization
 
@@ -206,19 +205,22 @@ colors: {
 ## 🐛 Troubleshooting
 
 ### Backend won't start
-- Ensure Python 3.8+ is installed: `python --version`
+- Ensure Python 3.10+ is installed: `python --version`
 - Check if port 8080 is available
 - Verify all dependencies are installed: `pip install -r requirements.txt`
 
 ### Frontend won't start
-- Ensure Node.js 18+ is installed: `node --version`
+- Ensure Node.js 20+ is installed: `node --version`
 - Check if port 5173 is available
 - Delete `node_modules` and reinstall: `rm -rf node_modules && npm install`
 
 ### Connection Issues
 - Verify backend is running on http://localhost:8080
 - Check CORS settings in backend
-- Ensure `.env` file exists in frontend with correct API URL
+- Ensure `.env` exists in the frontend (copy `.env.example`) with the correct `VITE_API_URL`
+
+### Backend returns 500 errors after a model change
+- Tables are never altered once created. Delete `booking_system_backend/booking.db` and restart.
 
 ## 📄 License
 
