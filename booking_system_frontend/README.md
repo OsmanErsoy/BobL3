@@ -9,7 +9,8 @@ A modern, space-themed frontend for the Galaxium Travels interplanetary booking 
 - **Real-time Updates**: Live flight availability and booking status
 - **User Management**: Simple name/email authentication
 - **Flight Booking**: Browse, search, and book interplanetary flights
-- **Booking Management**: View and cancel your bookings
+- **Seat Classes**: Choose Economy, Business or Galaxium in the booking modal; flight cards show a "from" price and per-class availability
+- **Booking Management**: View the class and price of your bookings, and cancel them
 - **Toast Notifications**: User-friendly feedback for all actions
 - **Smooth Animations**: Framer Motion powered transitions
 
@@ -101,7 +102,8 @@ src/
 ├── hooks/               # Custom React hooks
 │   └── useUser.tsx
 ├── utils/               # Utility functions
-│   └── formatters.ts
+│   ├── formatters.ts
+│   └── seatClasses.ts   # Seat class order, labels and "from" price helper
 ├── App.tsx              # Main app component
 ├── main.tsx             # Entry point
 └── index.css            # Global styles
@@ -130,10 +132,10 @@ All components follow a consistent design pattern with:
 
 The frontend connects to the backend API with the following endpoints:
 
-- `GET /flights` - List all flights
+- `GET /flights` - List all flights (with `seats_available`, `seats_available_by_class` and `prices_by_class`)
 - `POST /register` - Register new user
 - `GET /user?name=...&email=...` - Get user by credentials
-- `POST /book` - Book a flight
+- `POST /book` - Book a flight (optional `seat_class`, defaults to `economy`)
 - `GET /bookings/{user_id}` - Get user's bookings
 - `POST /cancel/{booking_id}` - Cancel a booking
 
@@ -141,16 +143,17 @@ The frontend connects to the backend API with the following endpoints:
 
 ### Booking a Flight
 
-1. Browse available flights on the Flights page
+1. Browse available flights on the Flights page (each card shows the "from" price and seats left per class)
 2. Click "Book Now" on desired flight
 3. Sign in or register (if not already logged in)
-4. Confirm booking details
-5. Receive confirmation and view in My Bookings
+4. Choose a class in the booking modal (sold-out classes are disabled; the cheapest class with seats is preselected) and watch the total price update
+5. Confirm booking details
+6. Receive confirmation and view in My Bookings
 
 ### Managing Bookings
 
 1. Navigate to My Bookings (requires login)
-2. View active and past bookings
+2. View active and past bookings, including each booking's class and the price for that class
 3. Cancel active bookings if needed
 4. See real-time status updates
 

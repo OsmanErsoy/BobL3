@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import type { Flight } from '../../types';
+import { useEffect, useState } from 'react';
+import type { Flight, SeatClass } from '../../types';
 import { Modal, Button } from '../common';
 import { Plane, Calendar, Clock, DollarSign } from 'lucide-react';
 import { formatCurrency, formatDate, calculateDuration } from '../../utils/formatters';
 import { bookFlight, isErrorResponse } from '../../services/api';
 import { useUser } from '../../hooks/useUser';
+import { SEAT_CLASSES, SEAT_CLASS_LABELS } from '../../utils/seatClasses';
 import toast from 'react-hot-toast';
 
 interface BookingModalProps {
@@ -14,15 +15,40 @@ interface BookingModalProps {
   onSuccess: () => void;
 }
 
+// Cheapest class that still has seats; null when every class is sold out
+const getDefaultSeatClass = (flight: Flight): SeatClass | null => {
+  const available = SEAT_CLASSES.filter((c) => flight.seats_available_by_class[c] > 0);
+  if (available.length === 0) return null;
+  return available.reduce((best, c) =>
+    flight.prices_by_class[c] < flight.prices_by_class[best] ? c : best
+  );
+};
+
 export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModalProps) => {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<SeatClass | null>(null);
+
+  // Reset the selection whenever the modal opens or the flight changes
+  useEffect(() => {
+    setSelectedClass(null);
+  }, [isOpen, flight?.flight_id]);
 
   if (!flight) return null;
+
+  // Fall back to the default if nothing is chosen or the chosen class is sold out
+  const seatClass =
+    selectedClass && flight.seats_available_by_class[selectedClass] > 0
+      ? selectedClass
+      : getDefaultSeatClass(flight);
 
   const handleConfirmBooking = async () => {
     if (!user) {
       toast.error('Please sign in to book a flight');
+      return;
+    }
+    if (!seatClass) {
+      toast.error('Please select an available seat class');
       return;
     }
 
@@ -33,6 +59,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
         user_id: user.user_id,
         name: user.name,
         flight_id: flight.flight_id,
+        seat_class: seatClass,
       });
 
       if (isErrorResponse(result)) {
@@ -121,6 +148,56 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
           </div>
         )}
 
+        {/* Seat Class */}
+        <fieldset className="glass-card p-4 bg-white/5">
+          <legend className="sr-only">Seat class</legend>
+          <h4 className="text-sm font-semibold text-star-white mb-3" aria-hidden="true">
+            Seat Class
+          </h4>
+          <div className="grid grid-cols-3 gap-3">
+            {SEAT_CLASSES.map((c) => {
+              const seatsLeft = flight.seats_available_by_class[c];
+              const soldOut = seatsLeft === 0;
+              const isSelected = seatClass === c;
+              return (
+                <label
+                  key={c}
+                  className={`block rounded-lg border p-3 text-center transition-colors focus-within:ring-2 focus-within:ring-cosmic-purple ${
+                    soldOut
+                      ? 'border-white/10 opacity-50 cursor-not-allowed'
+                      : isSelected
+                      ? 'border-cosmic-purple bg-cosmic-purple/20 cursor-pointer'
+                      : 'border-white/10 hover:border-white/30 cursor-pointer'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="seat-class"
+                    value={c}
+                    checked={isSelected}
+                    disabled={soldOut}
+                    onChange={() => setSelectedClass(c)}
+                    className="sr-only"
+                  />
+                  <span className="block text-sm font-semibold text-star-white">
+                    {SEAT_CLASS_LABELS[c]}
+                  </span>
+                  <span className="block text-sm text-star-white/80">
+                    {formatCurrency(flight.prices_by_class[c])}
+                  </span>
+                  <span
+                    className={`block text-xs ${
+                      soldOut ? 'text-red-500' : 'text-star-white/60'
+                    }`}
+                  >
+                    {soldOut ? 'Sold out' : `${seatsLeft} left`}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+
         {/* Price */}
         <div className="flex items-center justify-between p-4 glass-card bg-cosmic-gradient">
           <div className="flex items-center gap-2">
@@ -128,7 +205,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
             <span className="text-white font-semibold">Total Price</span>
           </div>
           <span className="text-2xl font-bold text-white">
-            {formatCurrency(flight.price)}
+            {seatClass ? formatCurrency(flight.prices_by_class[seatClass]) : '—'}
           </span>
         </div>
 
@@ -145,6 +222,7 @@ export const BookingModal = ({ isOpen, onClose, flight, onSuccess }: BookingModa
           <Button
             onClick={handleConfirmBooking}
             isLoading={isLoading}
+            disabled={!seatClass}
             className="flex-1"
           >
             Confirm Booking

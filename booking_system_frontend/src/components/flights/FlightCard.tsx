@@ -2,6 +2,7 @@ import type { Flight } from '../../types';
 import { Card, Button } from '../common';
 import { Plane, Clock, DollarSign, Users } from 'lucide-react';
 import { formatCurrency, formatDate, formatTime, calculateDuration } from '../../utils/formatters';
+import { SEAT_CLASSES, SEAT_CLASS_LABELS, getFromPrice } from '../../utils/seatClasses';
 import { motion } from 'framer-motion';
 
 interface FlightCardProps {
@@ -12,6 +13,7 @@ interface FlightCardProps {
 export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
   const isLowSeats = flight.seats_available <= 2;
   const isSoldOut = flight.seats_available === 0;
+  const fromPrice = getFromPrice(flight.prices_by_class, flight.seats_available_by_class);
 
   return (
     <motion.div
@@ -73,8 +75,9 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
           {/* Price */}
           <div className="flex items-center gap-2">
             <DollarSign size={16} className="text-alien-green" />
+            <span className="text-sm text-star-white/60">from</span>
             <span className="text-2xl font-bold text-star-white">
-              {formatCurrency(flight.price)}
+              {formatCurrency(fromPrice)}
             </span>
             <span className="text-sm text-star-white/60">per seat</span>
           </div>
@@ -85,6 +88,28 @@ export const FlightCard = ({ flight, onBook }: FlightCardProps) => {
             <span className={`text-sm ${isLowSeats ? 'text-solar-orange font-semibold' : 'text-star-white/70'}`}>
               {isSoldOut ? 'Sold Out' : `${flight.seats_available} seats available`}
             </span>
+          </div>
+
+          {/* Per-class availability */}
+          <div className="grid grid-cols-3 gap-2">
+            {SEAT_CLASSES.map((seatClass) => {
+              const seats = flight.seats_available_by_class[seatClass];
+              return (
+                <div
+                  key={seatClass}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-center"
+                >
+                  <p className="text-xs text-star-white/60">{SEAT_CLASS_LABELS[seatClass]}</p>
+                  <p
+                    className={`text-sm font-semibold ${
+                      seats === 0 ? 'text-star-white/40' : 'text-star-white'
+                    }`}
+                  >
+                    {seats === 0 ? 'Sold out' : `${seats} left`}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 

@@ -6,6 +6,7 @@ A complete full-stack application for booking interplanetary space travel, featu
 
 - **Modern Space-Themed UI** - Beautiful, responsive interface with animated starfield
 - **Full Booking System** - Browse flights, make bookings, manage reservations
+- **Seat Classes** - Book Economy, Business or Galaxium seats with per-class pricing and availability
 - **Dual Protocol Backend** - REST API and MCP (Model Context Protocol) support
 - **Type-Safe** - Full TypeScript frontend and Python type hints
 - **Real-Time Updates** - Live flight availability and booking status
@@ -110,15 +111,26 @@ See [booking_system_frontend/README.md](booking_system_frontend/README.md) for:
 1. **Browse Flights** - Navigate to the Flights page to see all available routes
 2. **Search & Filter** - Use the search bar to find specific destinations
 3. **Sign In/Register** - Click "Book Now" and enter your name and email
-4. **Confirm Booking** - Review flight details and confirm your reservation
-5. **Manage Bookings** - View and cancel bookings from "My Bookings" page
+4. **Choose a Class** - Pick Economy, Business or Galaxium (sold-out classes are disabled); the total price updates with your choice
+5. **Confirm Booking** - Review flight details and confirm your reservation
+6. **Manage Bookings** - View the class and price of each booking, and cancel from the "My Bookings" page (the seat returns to its class)
+
+### Seat Classes
+
+Each flight has separate seat inventory per class. `Flight.price` is the base (Economy) price; the other classes multiply it:
+
+| Class | Price multiplier |
+|-------|------------------|
+| Economy | 1x |
+| Business | 2x |
+| Galaxium | 4x |
 
 ### Demo Data
 
 The system comes pre-seeded with:
 - **10 Users** - Alice, Bob, Charlie, Diana, Eve, Frank, Grace, Heidi, Ivan, Judy
-- **10 Flights** - Routes between Earth, Mars, Moon, Venus, Jupiter, Europa, Pluto
-- **20 Sample Bookings** - Various booking statuses
+- **10 Flights** - Routes between Earth, Mars, Moon, Venus, Jupiter, Europa, Pluto, each with 10 seats split 6 Economy / 3 Business / 1 Galaxium
+- **20 Sample Bookings** - Various booking statuses and seat classes
 
 ## 🛠️ Technology Stack
 
