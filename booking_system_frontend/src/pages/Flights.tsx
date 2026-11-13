@@ -48,7 +48,7 @@ export const Flights = () => {
         const data = await getFlights();
         setFlights(data);
         setFilteredFlights(data);
-        return;
+        break;
       } catch (error: any) {
         if (attempt < retries) {
           await new Promise((resolve) => setTimeout(resolve, delay * attempt));
